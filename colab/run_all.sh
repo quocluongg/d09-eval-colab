@@ -42,6 +42,8 @@ fi
 "$VPY" -m pip freeze > "$LOGS/pip_freeze.txt"
 
 export PYTHONPATH="$(native "$PKG/src")"
+# Without this, Python block-buffers stdout into tee and Colab shows nothing until `run` exits.
+export PYTHONUNBUFFERED=1
 
 echo
 echo "=== [3/6] selfcheck ==="
@@ -136,6 +138,11 @@ def os_name():
 
 
 def cpu_name():
+    if sys.platform == "win32":
+        import winreg
+
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"HARDWARE\DESCRIPTION\System\CentralProcessor\0") as k:
+            return winreg.QueryValueEx(k, "ProcessorNameString")[0].strip()
     cpuinfo = Path("/proc/cpuinfo")
     if cpuinfo.exists():
         for line in cpuinfo.read_text().splitlines():
