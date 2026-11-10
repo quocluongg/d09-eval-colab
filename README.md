@@ -74,6 +74,7 @@ Runner tự kiểm sha256 của config và của `features.csv` trước khi ch�
 
 ## Ghi chú tái lập
 
+- **Hash zip khác nhau giữa các lần chạy là bình thường, không phải lỗi.** `run_meta.json` nhúng `timings_seconds` và `platform`, nên 21 file đó đổi mỗi lượt và kéo theo `MANIFEST.json` + hash zip. Thứ phải giống nhau giữa các máy là **21 `predictions.csv`**: đối chiếu bằng hash từng file trong `MANIFEST.json` của zip, đừng so hash zip. Hai lượt chạy độc lập trên cùng máy đã cho predictions giống hệt từng byte.
 - `selfcheck` nhạy với phiên bản thư viện: phải cài đúng `requirements.lock.txt` (numpy 2.5.4, pandas 3.1.0, scikit-learn 1.9.1, scipy 1.18.1, xgboost 3.4.1). Cài lệch là `max_abs_diff` vượt `1e-6`.
 - Colab cần Python 3.12 và Linux x86_64 glibc ≥ 2.28 — tất cả wheel pinned đều có sẵn trên PyPI cho cấu hình đó, không phải build từ source.
 - `n_jobs=1` trong config nên runtime tỉ lệ thuận số nhân CPU; Colab 2 vCPU thường nhanh hơn máy local 2 core/4 thread.
