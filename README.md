@@ -41,7 +41,7 @@ colab/
 
 ## Chạy local (Windows / macOS / Linux)
 
-Cần Python **3.12.10** (`package/README.md` yêu cầu `>= 3.12`; wheel pinned chỉ có cho cp312+).
+Cần Python **>= 3.12** (wheel pinned chỉ có cho cp312+). Đã kiểm chứng 3.12.10 trên Windows và 3.13.5 trên Linux; Colab hiện ship 3.13 nên cứ để mặc định.
 
 ```bash
 bash colab/run_all.sh
@@ -76,6 +76,8 @@ Runner tự kiểm sha256 của config và của `features.csv` trước khi ch�
 
 - **Hash zip khác nhau giữa các lần chạy là bình thường, không phải lỗi.** `run_meta.json` nhúng `timings_seconds` và `platform`, nên 21 file đó đổi mỗi lượt và kéo theo `MANIFEST.json` + hash zip. Thứ phải giống nhau giữa các máy là **21 `predictions.csv`**: đối chiếu bằng hash từng file trong `MANIFEST.json` của zip, đừng so hash zip. Hai lượt chạy độc lập trên cùng máy đã cho predictions giống hệt từng byte.
 - `selfcheck` nhạy với phiên bản thư viện: phải cài đúng `requirements.lock.txt` (numpy 2.5.4, pandas 3.1.0, scikit-learn 1.9.1, scipy 1.18.1, xgboost 3.4.1). Cài lệch là `max_abs_diff` vượt `1e-6`.
-- Colab cần Python 3.12 và Linux x86_64 glibc ≥ 2.28 — tất cả wheel pinned đều có sẵn trên PyPI cho cấu hình đó, không phải build từ source.
+- Colab hiện chạy **Python 3.13** (Linux x86_64, glibc ≥ 2.28). Cả cp312 và cp313 đều có wheel sẵn trên PyPI cho toàn bộ 17 pin, không phải build từ source. `selfcheck` đã pass trên cả 3.12.10/Windows (`max_abs_diff=8.5e-12`) và 3.13.5/Linux (`5.6e-12`), cùng confusion matrix `[[7846, 565], [100, 910]]`.
+- Python của Colab không kèm wheel `ensurepip`, nên `python -m venv` thường sẽ chết ở bước nạp pip. Script dùng `venv --without-pip` rồi cài qua `pip --python` của interpreter chủ để tránh chuyện đó; cách này cũng dùng lại được `.venv` dở dang của lần chạy lỗi trước, không cần xoá.
+- Trên Linux, `xgboost` kéo thêm `nvidia-nccl-cu13` (~305 MB) nên lượt cài đầu tiên lâu hơn đáng kể. Colab thường có sẵn phần này.
 - `n_jobs=1` trong config nên runtime tỉ lệ thuận số nhân CPU; Colab 2 vCPU thường nhanh hơn máy local 2 core/4 thread.
 - Lệnh `score` (chấm điểm với truth file) không nằm trong pipeline 1-click vì truth file không được phát kèm.
