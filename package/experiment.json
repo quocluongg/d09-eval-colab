@@ -1,0 +1,130 @@
+{
+  "features": [
+    "invoice_amount",
+    "number_of_items",
+    "average_unit_price",
+    "tax_rate",
+    "price_diff_ratio",
+    "qty_diff_ratio",
+    "amount_diff_ratio",
+    "duplicate_flag",
+    "missing_po",
+    "cash_split_flag",
+    "amount_ratio_supplier_avg",
+    "supplier_avg_amount_30d",
+    "supplier_avg_amount_90d",
+    "supplier_amount_std",
+    "invoice_frequency_30d",
+    "previous_error_rate",
+    "previous_rejection_rate",
+    "days_since_last_invoice",
+    "number_of_invoices_7d",
+    "number_of_invoices_30d",
+    "day_of_week",
+    "month"
+  ],
+  "missing_values": {
+    "add_indicator": true,
+    "strategy": "median",
+    "xgboost_native_nan": true
+  },
+  "models": {
+    "isolation_forest": {
+      "contamination": "auto",
+      "n_estimators": 300,
+      "n_jobs": 1,
+      "preprocessing": {
+        "imputation": "median_with_indicator"
+      },
+      "score_scaling": "negated_score_samples_minmax_train"
+    },
+    "logistic_regression": {
+      "C": 10.0,
+      "class_weight": "balanced",
+      "max_iter": 2000,
+      "preprocessing": {
+        "imputation": "median_with_indicator",
+        "log1p_features": [
+          "invoice_amount",
+          "average_unit_price"
+        ],
+        "scaler": "StandardScaler"
+      },
+      "solver": "lbfgs"
+    },
+    "mlp": {
+      "early_stopping": true,
+      "hidden_layer_sizes": [
+        64,
+        32
+      ],
+      "max_iter": 200,
+      "preprocessing": {
+        "imputation": "median_with_indicator",
+        "log1p_features": [
+          "invoice_amount",
+          "average_unit_price"
+        ],
+        "scaler": "StandardScaler"
+      }
+    },
+    "random_forest": {
+      "class_weight": "balanced_subsample",
+      "max_depth": null,
+      "min_samples_leaf": 1,
+      "n_estimators": 300,
+      "n_jobs": 1,
+      "preprocessing": {
+        "imputation": "median_with_indicator"
+      }
+    },
+    "xgboost": {
+      "eval_metric": "logloss",
+      "learning_rate": 0.1,
+      "max_depth": 3,
+      "n_estimators": 300,
+      "n_jobs": 1,
+      "preprocessing": {
+        "imputation": "none_native_nan"
+      },
+      "scale_pos_weight": "train_neg_over_pos"
+    }
+  },
+  "seeds": {
+    "isolation_forest": [
+      42,
+      43,
+      44,
+      45,
+      46
+    ],
+    "logistic_regression": [],
+    "mlp": [
+      42,
+      43,
+      44,
+      45,
+      46
+    ],
+    "random_forest": [
+      42,
+      43,
+      44,
+      45,
+      46
+    ],
+    "xgboost": [
+      42,
+      43,
+      44,
+      45,
+      46
+    ]
+  },
+  "split": {
+    "dateColumn": "decidedAt",
+    "fallbackDateColumn": "issueDate",
+    "trainEnd": "2026-07-01",
+    "validationEnd": "2026-10-01"
+  }
+}
