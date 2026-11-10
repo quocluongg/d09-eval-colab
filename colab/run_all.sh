@@ -20,26 +20,40 @@ LOGS="$ROOT/logs"
 VENV="$ROOT/.venv"
 mkdir -p "$LOGS"
 
-BASE_PY="${BASE_PYTHON:-python}"
+BASE_PY="${BASE_PYTHON:-}"
+if [[ -z "$BASE_PY" ]]; then
+  # Colab and Windows expose `python`; Debian-only images expose just `python3`.
+  if command -v python >/dev/null 2>&1; then
+    BASE_PY=python
+  elif command -v python3 >/dev/null 2>&1; then
+    BASE_PY=python3
+  else
+    echo "ERROR: neither python nor python3 found on PATH. Set BASE_PYTHON explicitly."
+    exit 1
+  fi
+fi
 
 echo "=== [1/6] base interpreter ==="
+echo "interpreter=$BASE_PY"
 "$BASE_PY" -c 'import sys; print(sys.version); sys.exit(0 if sys.version_info >= (3, 12) else 1)' || {
-  echo "ERROR: Python >= 3.12 is required (package/README.md pins 3.12.10)."
+  echo "ERROR: Python >= 3.12 is required; the pinned wheels only exist for cp312+."
   exit 1
 }
 
 echo
 echo "=== [2/6] venv + pinned dependencies ==="
-if [[ ! -d "$VENV" ]]; then
-  "$BASE_PY" -m venv "$(native "$VENV")"
+# Colab's Python ships without ensurepip's bundled wheels, so a plain `venv` dies
+# while seeding pip. Create it empty and drive it with the host pip's --python.
+case "$(uname -s)" in
+  MINGW*|MSYS*|CYGWIN*) VPY="$VENV/Scripts/python.exe" ;;
+  *)                    VPY="$VENV/bin/python" ;;
+esac
+# A venv left behind by a failed ensurepip run still has a usable interpreter.
+if [[ ! -x "$VPY" ]]; then
+  "$BASE_PY" -m venv --without-pip "$(native "$VENV")"
 fi
-if [[ -x "$VENV/Scripts/python.exe" ]]; then
-  VPY="$VENV/Scripts/python.exe"
-else
-  VPY="$VENV/bin/python"
-fi
-"$VPY" -m pip install -r "$(native "$PKG/requirements.lock.txt")" 2>&1 | tee "$LOGS/install.log"
-"$VPY" -m pip freeze > "$LOGS/pip_freeze.txt"
+"$BASE_PY" -m pip --python "$(native "$VPY")" install -r "$(native "$PKG/requirements.lock.txt")" 2>&1 | tee "$LOGS/install.log"
+"$BASE_PY" -m pip --python "$(native "$VPY")" freeze > "$LOGS/pip_freeze.txt"
 
 export PYTHONPATH="$(native "$PKG/src")"
 # Without this, Python block-buffers stdout into tee and Colab shows nothing until `run` exits.
