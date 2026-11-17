@@ -36,6 +36,10 @@ Làm đúng `model_v2/e3_send_to_quoc.md`. Ba zip Triều gửi đã đối chi�
 
 Gửi lại Triều **5 món**: zip `out.zip` (không giải nén, không đổi tên), sha256 của zip, toàn bộ text `selfcheck`, OS + RAM, tổng thời gian `run`. Kèm `python3 --version` như Triều dặn.
 
+Chạy local: `bash colab/run_v1_1.sh` (log trong `runner_v1_1/logs/`).
+
+**Chọn interpreter:** script chỉ nhận interpreter **có pip** vì venv được tạo `--without-pip` rồi cài qua `pip --python` của interpreter chủ. Colab có `/usr/bin/python3.12` (3.12.3) nhưng không kèm pip — chọn nó là chết ở `No module named pip`. Script thử `python3.12` → `python` → `python3`, bỏ qua con nào thiếu pip, và in con đã chọn. Nếu `.venv` còn sót lại của lần chạy lỗi trước thuộc Python khác minor, script tạo lại (`venv --clear`) chứ không dùng lẫn.
+
 ## Pipeline v1 làm gì
 
 | Bước | Lệnh | Kết quả |

@@ -34,16 +34,18 @@ BASE_PY="${BASE_PYTHON:-}"
 if [[ -z "$BASE_PY" ]]; then
   # Prefer 3.12 (Trieu's pin). On Windows `python3` can be a newer 3.14 while
   # `python` is 3.12.10, so pick by version, not by name order alone.
+  # The venv is created --without-pip and driven by this interpreter's pip, so a
+  # candidate without pip (Colab's /usr/bin/python3.12) cannot be used.
   for cand in python3.12 python python3; do
     command -v "$cand" >/dev/null 2>&1 || continue
-    if "$cand" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 12) else 1)' >/dev/null 2>&1; then
+    if "$cand" -c 'import sys, pip; sys.exit(0 if sys.version_info >= (3, 12) else 1)' >/dev/null 2>&1; then
       BASE_PY="$cand"
       break
     fi
   done
 fi
 if [[ -z "$BASE_PY" ]]; then
-  echo "ERROR: no Python >= 3.12 on PATH (tried python3.12, python, python3). Set BASE_PYTHON explicitly."
+  echo "ERROR: no Python >= 3.12 with pip on PATH (tried python3.12, python, python3). Set BASE_PYTHON explicitly."
   exit 1
 fi
 echo "interpreter=$BASE_PY"
@@ -61,9 +63,20 @@ case "$(uname -s)" in
   MINGW*|MSYS*|CYGWIN*) VPY="$VENV/Scripts/python.exe" ;;
   *)                    VPY="$VENV/bin/python" ;;
 esac
-# A venv left behind by a failed ensurepip run still has a usable interpreter.
-if [[ ! -x "$VPY" ]]; then
-  "$BASE_PY" -m venv --without-pip "$(native "$VENV")"
+# A venv left behind by a failed run still has a usable interpreter, but it may
+# belong to a different Python than the one now selected (Colab's pip-less
+# python3.12 creates a 3.12 venv that the next run would silently inherit).
+BASE_MINOR=$("$BASE_PY" -c 'import sys; print("%d.%d" % sys.version_info[:2])')
+if [[ -x "$VPY" ]]; then
+  HAVE_MINOR=$("$VPY" -c 'import sys; print("%d.%d" % sys.version_info[:2])' 2>/dev/null || echo none)
+else
+  HAVE_MINOR=none
+fi
+if [[ "$HAVE_MINOR" != "$BASE_MINOR" ]]; then
+  echo "venv python=$HAVE_MINOR base python=$BASE_MINOR -> creating fresh venv"
+  "$BASE_PY" -m venv --without-pip --clear "$(native "$VENV")"
+else
+  echo "reusing venv python=$HAVE_MINOR"
 fi
 "$BASE_PY" -m pip --python "$(native "$VPY")" install --upgrade pip 2>&1 | tee "$LOGS/install.log"
 "$BASE_PY" -m pip --python "$(native "$VPY")" install -r "$(native "$PKG/requirements.lock.txt")" 2>&1 | tee -a "$LOGS/install.log"
