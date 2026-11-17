@@ -1,0 +1,3 @@
+# runner_v1_1/.gitattributes forces eol=lf on experiment.sha256, which would rewrite
+# Trieu's CRLF bytes. Keep the checkout byte-identical to runner_v1_1.zip.
+* -text

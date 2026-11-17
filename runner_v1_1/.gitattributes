@@ -1,0 +1,3 @@
+experiment.json text eol=lf
+experiment.sha256 text eol=lf
+config/*.json text eol=lf

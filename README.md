@@ -1,12 +1,42 @@
 # D09 — model comparison, 1 click trên Colab
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/quocluongg/d09-eval-colab/blob/main/colab/run_all.ipynb)
+Repo có **2 pipeline** chạy độc lập:
 
-Repo này gói bộ eval `d09_eval` (trong `package/`) kèm dữ liệu (`data/data/`) và một pipeline chạy trọn vẹn từ đầu đến cuối: **selfcheck → run → pack**. Mở notebook bằng badge ở trên rồi `Runtime` → `Run all` (Ctrl+F9) là xong, không phải chỉnh gì.
+| Pipeline | Notebook | Package | Dữ liệu |
+| --- | --- | --- | --- |
+| v1 (5 model) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/quocluongg/d09-eval-colab/blob/main/colab/run_all.ipynb) `colab/run_all.ipynb` | `package/` | `data/data/` (45.317 dòng) |
+| **v1.1 (9 model, Triều)** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/quocluongg/d09-eval-colab/blob/main/colab/run_v1_1.ipynb) `colab/run_v1_1.ipynb` | `runner_v1_1/` | `runner_v1_1/data/` (wc -l 38465) + `runner_v1_1/selfcheck_v1/data/` (45.317 dòng) |
 
-> Public repo, one-click Colab runner for the D09 five-model comparison. Open the badge above and choose *Runtime → Run all*. The pipeline stops at the first failing command and prints the error verbatim.
+Mở notebook bằng badge rồi `Runtime` → `Run all` (Ctrl+F9) là xong, không phải chỉnh gì. Cả hai pipeline đều **dừng ở lệnh lỗi đầu tiên** và in nguyên văn lỗi, không tự sửa.
 
-## Pipeline làm gì
+> Public repo, one-click Colab runners for the D09 model comparison. Open a badge above and choose *Runtime → Run all*. Each pipeline stops at the first failing command and prints the error verbatim.
+
+## Runner v1.1 (Triều) — `colab/run_v1_1.ipynb`
+
+Làm đúng `model_v2/e3_send_to_quoc.md`. Ba zip Triều gửi đã đối chiếu SHA-256 khớp từng byte:
+
+| Zip | SHA-256 |
+| --- | --- |
+| `runner_v1_1.zip` | `5a8aa4af663a7bb8154d7bdc791a871580e4520141fb07a0f6fb81e76d179e10` |
+| `v2_medium_s42_data.zip` | `ebfcc3df6623ea5c642ef43ab7ffff3089bd7561351e04811f11f097d817329f` |
+| `v1_selfcheck_data.zip` | `aebc11c07c16b4c81c106c7e32a0dc7bfb0c5aebe8342d44b88837d94ac2659f` |
+
+| Bước | Lệnh |
+| --- | --- |
+| 1 | Sanity số dòng: `data/features.csv` = 38465, `selfcheck_v1/data/features.csv` = 45318 (lệch → dừng) |
+| 2 | venv + `pip install --upgrade pip` + `pip install -r requirements.lock.txt` |
+| 3 | `d09_eval selfcheck --data selfcheck_v1/data` |
+| 4 | `d09_eval run --config config_tuned/experiment.json --data data --out out --models logistic_regression random_forest xgboost isolation_forest mlp autoencoder xgboost_if_feature combo_rank_mean combo_or` |
+| 5 | `d09_eval pack --out out` |
+| 6 | Report `runner_v1_1/logs/RESULTS.txt` + tải `runner_v1_1/out.zip` |
+
+**selfcheck bắt buộc chạy trên `selfcheck_v1/data`** (data v1) vì `reference/lr_v1_reference.json` là số của v1; chạy trên `data` v2 sẽ lệch số dòng. Hai zip data đều giải nén ra thư mục `data/`, nên `v1_selfcheck_data.zip` được giải nén riêng vào `selfcheck_v1/` để không ghi đè lên data v2.
+
+`selfcheck_v1/data/features.csv` giống hệt từng byte với `data/data/` của pipeline v1 (cùng sha256 `0e0abb30…527ec`).
+
+Gửi lại Triều **5 món**: zip `out.zip` (không giải nén, không đổi tên), sha256 của zip, toàn bộ text `selfcheck`, OS + RAM, tổng thời gian `run`. Kèm `python3 --version` như Triều dặn.
+
+## Pipeline v1 làm gì
 
 | Bước | Lệnh | Kết quả |
 | --- | --- | --- |
@@ -35,8 +65,17 @@ data/data/
   features.csv      45.317 dòng
   MANIFEST.json     sha256 của features.csv, runner tự kiểm
 colab/
-  run_all.ipynb     notebook 1-click
-  run_all.sh        toàn bộ pipeline, set -euo pipefail
+  run_all.ipynb     notebook 1-click (v1)
+  run_all.sh        toàn bộ pipeline v1, set -euo pipefail
+  run_v1_1.ipynb    notebook 1-click (v1.1 của Triều)
+  run_v1_1.sh       toàn bộ pipeline v1.1, set -euo pipefail
+runner_v1_1/        package v1.1 của Triều, giữ nguyên byte
+  config_tuned/experiment.json  cấu hình tuned + 9 model spec
+  data/             features.csv v2 (wc -l 38465) + MANIFEST.json
+  selfcheck_v1/data/  features.csv v1 (45.317 dòng) cho selfcheck
+  reference/lr_v1_reference.json  baseline LR của v1
+model_v2/
+  e3_send_to_quoc.md  hướng dẫn + SHA-256 của 3 zip Triều gửi
 ```
 
 ## Chạy local (Windows / macOS / Linux)
